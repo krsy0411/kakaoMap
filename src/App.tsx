@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 declare global {
@@ -10,7 +10,10 @@ declare global {
 
 function App() {
   const mapRef = useRef<HTMLDivElement>(null);
+  // [map, setMap] = useState<any>();
   const map = useRef<any>(null);
+  // 상태관리 : 배열data, 입력을 배열을 받음
+  const [markerList, setMarkerList] = useState<any[]>([]);
 
   useEffect(() => {
     // script 태그를 만들어서 속성 넣고 html문서에 넣기
@@ -29,13 +32,30 @@ function App() {
             center: new window.kakao.maps.LatLng(33.450701, 126.570667),
             level: 10,
           };
-
+          // map 객체 생성
           map.current = new window.kakao.maps.Map(mapRef.current, options);
+
+          // 마우스 우클릭 이벤트
+          window.kakao.maps.event.addListener(
+            map.current,
+            "rightclick",
+            (mouseEvent: any) => {
+              const latlng = mouseEvent.latLng;
+              // 타이틀을 입력
+              const title = prompt("마커의 타이틀을 입력해주세요");
+              // 마커 객체
+              var marker = new window.kakao.maps.Marker({
+                map: map.current,
+                position: latlng,
+                title,
+              });
+              // 이전 데이터들을 풀어서 새로 받은 데이터와 새 배열로 생성
+              setMarkerList((prev) => [...prev, marker]);
+            }
+          );
         }
       });
     };
-    // 왜 스크립트 태그를 지우지...
-    return () => script.remove();
   }, []);
 
   return (
@@ -47,6 +67,19 @@ function App() {
           height: 500,
         }}
       ></div>
+      {/* markerList를 순회하면서 value들을 div로 생성 */}
+      {markerList.map((value) => (
+        <div
+          onClick={() => {
+            // 클릭하면 해당 마커 사라짐
+            value.setMap(null);
+            // map함수에서 받은 value와 일치하지 않는 배열 내 값들만 살려서 set
+            setMarkerList(markerList.filter((v) => v !== value));
+          }}
+        >
+          {value.getTitle()}
+        </div>
+      ))}
     </div>
   );
 }
